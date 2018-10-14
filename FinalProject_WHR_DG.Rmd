@@ -1,0 +1,426 @@
+---
+title: "FinalProject_DataGlossary"
+author: "Lin Ma"
+date: "12/7/2017"
+output: html_document
+---
+
+
+#Individual project
+This is the data Glossary, I am using the world happiness report as the data set to show my knownledge learned from this course.There were 20 commands that I've choosed from the list. Each of the codes were demonstatrate with interpration and application in each of the chunks.
+
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(Hmisc)
+library(ggthemes)
+library(knitr)
+library(xtable)
+library(pander)
+library(tidyr)
+library(reshape2)
+library(directlabels)
+library(car)
+```
+
+
+```{r}
+#Bring data
+WHR2015<-read_csv("~/Desktop/DA101/FinalProject/2015.csv")
+WHR2016<-read_csv("~/Desktop/DA101/FinalProject/2016.csv")
+WHR2017<-read_csv("~/Desktop/DA101/FinalProject/2017.csv")
+
+```
+
+
+##Commands/Wrangling
+
+1)table() 
+A)Command table() is used to build a summarized table of the counts for each combination of factor levels. I use table command here for check if the world happiness report's data was investigated from the same countries for three years.
+B)the table command here provides the counts for each countries for three different years.
+```{r, echo=TRUE}
+#C)
+table(WHR2015$Region)
+table(WHR2016$Region)
+```
+E) According to the information provided by the codes, we see the number of countries that from some of the region were different in the two years report. 
+
+
+
+2)summary()
+A)Command summary() can provides the general summerised statistics about the data. I use this command to see is there a change in the extrem happiness scores within three years. 
+B)The summary command here is used to check the extrem value for happiness score for three years. And adding the as.numeric code can assign R to read the data column as numeric number. The part (WHR2015$`Happiness Score`) tells R to look at the column named "Happiness Score" in WHR2015 data set. 
+```{r, echo=TRUE}
+#C)
+summary(as.numeric(WHR2015$`Happiness Score`))
+summary(as.numeric(WHR2016$`Happiness Score`))
+summary(as.numeric(WHR2017$`Happiness.Score`))
+```
+E) According to the summary() code, we see there is a slightly change in the max and min value for happiness scores through the three data sets.
+
+
+
+3)glimpse()
+A)I wanted to take a look at what are the columns in the datasets, and are the column names consistent with three years. I will use glimpse() command here because it allows me to see every column in the world happiness report data frames. 
+B)The glimpse command is used to see all the columns name and first, a few data in the world happiness report dataset.By running this code, I can also know how many rows and columns are in the data sets. I ran the same code for three years of the report, to see if they all have the same amount of columns and same column names.
+```{r, echo=TRUE}
+#C)
+glimpse(WHR2015)
+glimpse(WHR2016)
+glimpse(WHR2017)
+
+```
+E)According to the command glimpse(), I see that year 2017 has the different column name, column number and observations compare to the data sets of year 2016 and year 2015. And the region column is missing from the data set 2017.
+
+
+
+4)rename()
+A)Since the data sets 2017 has different column name for the same data, I would like to rename them to make it consistent with the previous two years data sets.
+B)For the commands that list below, I renamed the 7 variables in WHR2017 data sets to be the same column names as in WHR2016, and then save the change into the new version of WHR2017.
+```{r, echo=TRUE}
+#C)
+WHR2017<-WHR2017 %>%
+  dplyr::rename("Happiness Rank" ="Happiness.Rank")
+WHR2017<-WHR2017 %>%
+  dplyr::rename("Happiness Score"="Happiness.Score")
+WHR2017<-WHR2017 %>%
+  dplyr::rename("Economy (GDP per Capita)"="Economy..GDP.per.Capita.")
+WHR2017<-WHR2017 %>%
+  dplyr::rename("Health (Life Expectancy)"="Health..Life.Expectancy.")
+WHR2017<-WHR2017 %>%
+  dplyr::rename("Trust (Government Corruption)"="Trust..Government.Corruption.")
+WHR2017<-WHR2017 %>%
+  dplyr::rename("Dystopia Residual"="Dystopia.Residual")
+
+```
+E)By using the rename() command, the three data sets all have the same column name now.
+
+
+
+5)select()
+A)In the WHR2017, we lack the region column. Since we had the region column for WHR2016 and most of the countries in these two data sets are the same, so I think I can borrow the region column in WHR2016 and create one for WHR2017. To do that, the first step I will do is use select() command to select the region column and create a data frame that just has countries and their corresponding regions. 
+B)I have chosen the data column named "Region" and "Country" from the data frame "WHR2016", then I assigned the new data frame that only contains column "Region" and "Country" with the name "CONREG".
+```{r, echo=TRUE}
+#C)
+CONREG<-WHR2016%>%
+  dplyr::select(Region, Country) 
+
+```
+E)By using the select() command in dplyr, I have a data frame named "CONREG" from "WHR2016" with only the region column and country column in it. 
+
+
+
+6)left_join()
+A)The second step for adding the region column is merged the data frame "CONREG" with "WHR2017", I will need left_join() command to merge the data rows with the correct region names.
+B)We combine the "WHR2017" with "CONREG" by the corresponding country names, then assign it to be the newest version of "WHR2017".
+```{r, echo=TRUE}
+#C)
+WHR2017<-left_join(WHR2017,CONREG, by="Country")
+```
+E)After we used left_join() command, the region column has successfully added into the data frame "WHR2017". I can see which region do the countries belong now.
+
+
+
+7)mutate()
+A)I will need a data set that contains three years data, I need first add a name column to each of the existing data set, so it won't get mass up when I bind the three data sets together. To add a new column, I will need to use the mutate() code. 
+B)Here, I am adding a year column into "WHR2015", "WHR2016" and "WHR2017" by using the mutate() command. 
+```{r, echo=TRUE}
+#C
+WHR2015<-WHR2015%>%
+  mutate(Year=2015)
+WHR2016<-WHR2016%>%
+  mutate(Year=2016)
+WHR2017<-WHR2017%>%
+  mutate(Year=2017)
+```
+E)After I ran the code above, I have the newest version of "WHR2015", "WHR2016" and "WHR2017" with corrisponding year column. For example, in data frame "WHR2015", I added a column with the name year and all the rows are "2015".
+
+
+
+9)rbind()
+A)I want to bind the three year's data to form a data set that contains world happiness report from 2015 to 2017. The rbind() command can combine the data sets by rows.
+B)The rbind() command here bound three data set together by connecting the second data set to the first data set's last row.Before I bind the three year's data, I rearranged the columns in 2017 then removed the error column in "WHR2015" and the upper/lower confidence interval columns in dataset "WHR2016" and "WHR2017". This is because I am not interested in their variables and I want all three datasets to have the same column number and column name.
+
+```{r, echo=TRUE}
+#C
+WHR2017<-WHR2017[c(1,13,2,3,4,5,6,7,8,9,10,11,12,14)]
+WHR2015<-WHR2015[-c(5)]
+WHR2016<-WHR2016[-c(5,6)]
+WHR2017<-WHR2017[-c(5,6)]
+WHR<- rbind(WHR2015,WHR2016,WHR2017)
+
+```
+E)By using the rbind() command, now we have a huge data set that contains three years data of happiness report by connecting the second and third year by the end of the first year's last row.
+
+
+
+10)str()
+A)Now I want to take a look at the structure of "WHR" data set that I just create. In this case, I can use str() as an alternative to summary() to see the structure of the data set, including the column names, column numbers, amount of rows, example of the rows  and whether the data in the column is character data or numeric data 
+B)I ran str() command for the data set "WHR", to see if it is the structure I want.
+```{r, echo=TRUE}
+#C)
+str(WHR)
+
+```
+E)According to the summary given by str() command, I know that I have 12 columns with 471 rows in total, all the data were list as character data and the names are what exactly I wanted. 
+
+
+
+##Visualization
+1)histogram
+A)I want to see if the data set "WHR2016"'s happiness scores have a normal distribution. In this case, the histogram would be the most appropriate because it can tell me the shape of the data by counts, I can clearly see where the data has a relatively small amount to be found and where the data has a relatively large amount of data to be found. 
+B)I used the geom_histogram command to tell R to draw a histogram for me by using the column of happiness scores in "WHR2016" data set. I also want R to read the "happiness score" as numeric data so I used .numeric before that. A histogram would be the best to use when there is only one continuous variable and we would like to see the distribution of the variable. 
+```{r, echo=TRUE}
+#C)
+ggplot(WHR, aes(suppressWarnings(as.numeric(WHR$`Happiness Score`))))+
+  geom_histogram()+
+  labs(title = "Histogram for World Happiness Score of Year 2015, 2016 and 2017 ", y = "Frequency", x="Happiness Scores")+
+  facet_wrap(~Year)
+```
+D)The graph has publishable labels and annotations. 
+E)According to the histogram, I can conclude that the happiness score for three different years all has the normal distributions. And happiness score about 5.1 has the highest frequency.
+
+
+
+2)Bar
+A)I want to look at how does each of the factor matter for some specific country and which one of them would have the greatest potion towards the happiness score for the country. To do this, I will need to create a bar graph with each of the layers indicates each of the factors.
+B)I used the bar graph to represent the selected countries with the different degree of color represent different factors towards the happiness score without the residual. The "fill="" command tells R to introduce the third variable into the graph.coord_flip() the command tells r to flip the x and y axis， the layer "stat="identity" is used to assign a variable to the y-axis instead of just using counts, the layer scale_fill_brewer(palette = 13) assign a specific color to use. The bar graph would be the best to use when we want to graph a discrete variable with counts or a discrete variable with another continuous variable. 
+```{r, echo=TRUE}
+# This is not a part of the question, but I will need the commands below to prepare for the graph.
+China<-WHR %>%
+  filter(Country=="China",Year==2017)
+theUS<-WHR %>%
+  filter(Country=="United States",Year==2017)
+Switzerland<-WHR%>%
+  filter(Country=="Switzerland",Year==2017)
+Australia<-WHR%>%
+  filter(Country=="Australia",Year==2017)
+Egypt<-WHR%>%
+  filter(Country=="Egypt",Year==2017)
+Brazil<-WHR%>%
+  filter(Country=="Brazil",Year==2017)
+
+Regions<-rbind(China,theUS,Switzerland,Australia,Egypt,Brazil)
+Regions<-as.data.frame(Regions)
+
+Regions1<-melt(data= Regions, id.vars = c("Country","Region","Happiness Rank","Happiness Score","Year","Dystopia Residual"))
+Regions1<-dplyr::rename(Regions1, Scores=value,Factors=variable)
+
+Regions1$Factors<-factor(Regions1$Factors, levels = c("Trust (Government Corruption)","Generosity", "Freedom","Health (Life Expectancy)","Economy (GDP per Capita)","Family"))
+
+#C)
+ggplot(data = Regions1, aes(x = Country, y = as.numeric(Scores), fill = factor(Factors))) + 
+    geom_bar(stat = "identity")+
+  coord_flip()+
+  scale_fill_brewer(palette = 13)+
+  labs(title = "Six Factors of the Happiness Score in 2017 of the Selected Countries ", y = "Happiness Score Without the Dystopia Residual", x="Country" ,fill = "Six Factors") 
+```
+D)The graph has publishable labels and annotations. 
+E)According to the graph shown below, when we ignore the dystopia residual, for most of the countries, GDP per capita would influence the happiness score the most in the 6 given factor. But for some specific countries, for example, like Brazil, I see the family has a greater portion towards the total happiness scores than GDP per capita.
+
+
+
+
+3)freqency polygon()
+A)I want to see how does the data set "WHR2017"'s happiness scores' frequency distributed. The reason why I choose frequency polygon here is that it can clearly show me the shape of the data by connecting the frequency for each of the continuous variables with line segments.
+B)I used the geom_histogram command to tell R to draw a histogram for me by using the column of happiness scores in "WHR2016" data set. And I also want R to read the "happiness score" as numeric data so I used .numeric before that. The suppressWarings help me to get rid of the waring massage says "NAs introduced by coercion".The frequency polygon is used when there is only one continuous variable and we would like to display the cumulative frequency distributions.
+```{r,echo=TRUE}
+#C)
+ggplot(WHR2017, aes(suppressWarnings(as.numeric(`Happiness Score`))))+
+  geom_freqpoly()+
+  labs(title = " the Frequency Polygon for World Happiness Score for year 2017 ", y = "Frequency", x="Happiness Scores")
+
+```
+D)The graph has publishable labels and annotations. 
+E)According to the frequency polygon, I see the data for happiness score of the year 2017 is normally distributed.
+
+
+
+4)scatter plot
+A)I want to visualize if there is a linear relationship between the factor "GDP per capita" and "life expectancy". In this case, the scatter plot would be the best choice because it shows each point that created by the two variables and has the best fit line as a guide. 
+B)I used the geom_point() in ggplot2 to draw the scatter plot of the GDP per capita column and the life expectancy column in the WHR data set. By adding the layer geom_smooth(method = "lm", se=FALSE), I tell R to add a best fit line into the graph to represent the relationship between the variables.The scatter plot is used when there are two continuous variables and we wanted to focus on their relationship with each other. 
+```{r,echo=TRUE}
+#C)
+ggplot(WHR,aes(`Economy (GDP per Capita)`,`Health (Life Expectancy)`)) +
+  geom_point()+
+    geom_smooth(method = "lm", se=FALSE) +
+  labs( title="Scatter plot for GDP per Capita with Life Expectancy Index", x= "GDP per Capita", y="Life Expectancy Index")
+```
+D)The graph has publishable labels. 
+E)According to the scatter plot, I see there is a strong positive relationship between the GDP per capita and life expectancy index.
+
+
+
+5)Line graph
+A)I want to see if the average happiness score of regions changes through years. So the line graph is the best choice since it tells us the tendency of the average happiness score change as the year change.
+B)I used the geom_line() in ggplot2 to draw the line graph for the mean happiness score variable and the year variable then use the different color to distinguish regions. A line graph would be the most appropriate to use when we want to focus on the tendency of the variable y changes as variable x change. Most of the time we use the line graph to compare changes over the same period of time for more than one group, and color can be used to identify the third variable z. 
+```{r,echo=TRUE}
+# This is not a part of the question, but I will need the commands below to prepare for the graph.
+WHR<-WHR%>%
+  dplyr::rename("HappinessScore"="Happiness Score")
+WHR<-WHR%>%
+  dplyr::rename("HappinessRank"="Happiness Rank")
+WHRSUM<-WHR %>%
+  group_by(Region, Year)%>%
+  dplyr::summarise(MeanHP=mean(suppressWarnings(as.numeric(HappinessScore))))
+WHRSUM<-WHRSUM %>%
+  filter(!is.na(MeanHP))
+WHRSUM<-WHRSUM %>%
+  filter(!is.na(Region))
+
+#C)
+ggplot(WHRSUM,aes(Year,MeanHP,color=Region, group= Region))+
+  geom_line()+
+  labs(title = "Trends Of The Average Happiness Scores In Different Regions From 2015 to 2017", 
+    y = "Avearage Happiness Scores", x = "Year", fill = "Region")+
+  geom_dl(aes(label = Region), method = list(dl.combine("first.points", "last.points"), cex = 0.8))
+
+```
+D)The graph has publishable labels. 
+E) According to the line graph, we see there is no significant change in average happiness score for different region through the years. Even some of them might change slightly, but it is not large enough to cause the line to a drastic change.
+
+
+
+##Statistical/Analytical tools
+
+1)Two-sample T-test
+A)I am interested in is there a significant difference between the mean of GDP per capita and happiness score. In this case, the two sample t-test would be my best choice because the p-value that it was given can tell me whether I can reject the Null hypothesis or not. 
+B)I ran a t.test for GDP per capita and happiness score in "WHR" dataset, and I set the alternative hypothesis to be the true difference for the mean is greater than 0 by using the code "alternative ="greater", since equal variance is assumed I also set "var.equal=TRUE". The two-sample t-test is used when compare whether the average difference between two variables is significant enough or just due to random chance.
+```{r,echo=TRUE}
+#C)
+t.test(WHR$HappinessScore,WHR$`Economy (GDP per Capita)`,var.equal=TRUE)
+
+```
+E)According to the t test's result, the null hypothesis is the true difference in means for GDP per capita and happiness score is equal to 0, we reject the null hypothesis by saying there is a significant difference found in means for GDP per capita and happiness score (Two Sample t-test p value< 2.2e-16).  With the 95% confidence interval, we are 95% sure the population mean is between 4.33 to 4.55.
+
+
+
+2)One-sample T-test 
+A)I want to compare the mean for life expectency of a sample with a constant value 0.5. A one sample t test can be used in this case. If I reject the null hypothesis, it tells me that there is a significant difference between the population mean of life expectancy with 0.5.
+B)I ran a one sample t test for "life expectancy" column in "WHR" datset, and set the constanct value μ0 equals to 0.  The one sample t-test would be the most appropriate to use when we want to compare the mean for a sample with a constant value.
+```{r,echo=TRUE}
+# This is not a part of the question, but I will need the commands below to prepare for answer the question.
+summary(WHR$`Health (Life Expectancy)`)
+
+#C)
+t.test(WHR$`Health (Life Expectancy)`,mu=0.50)
+
+```
+E)According to the t-test result, the null hypothesis is the true mean is equal to 0.5. We reject the null hypothesis by saying there is a signifcant difference between the mean for life expectancy and 0.5. (one sample t test p-value=2.129e-12). The degree of freedom is 469, it suggests that we have enough population to draw conclusion. With the 95% confidence interval, we are 95% sure the population mean is between 0.558 to 0.602.
+
+
+
+
+3)Correlation test
+A)I want to investigate that is there a correlation between the factor "GDP per capita" and "life expectancy". In this case, I will use correlation test to examine the relationship between them. This is because the person correlation test is a measure of the direction strength of the linear relationship between two variables.
+B)I ran a correlation test by using the command cor.test() for "Economy (GDP per Capita)" and "Health (Life Expectancy)" in "WHR" dataset. The correlation test would be the most appropriate to use when we want to investigate if there is a linear relationship between two variables and if the linear relationship exists, we also want to know how strong the relationship is.
+```{r,echo=TRUE}
+#C)
+cor.test(WHR$`Economy (GDP per Capita)`,WHR$`Health (Life Expectancy)`)
+```
+E)According to the statistical result, I can conclude that there is a linear relationship between the two variables. (GDP per capita vs. Life expectancy)(correlation test p-value < 2.2e-16) I reject the null hypothesis by saying there is a strong positive relationship which has correlation coefficient equals to 0.792224. With the 95% confidence interval, we are 95% sure the true correlation coefficient is between 0.7559430 to 0.8236532.
+
+
+
+4)Bivariate Regression
+A)I want to explore how does GDP per capita influence on the happiness score, in this case, the bivariate regression would be the best choice, because it not only tells us the linear association between the variables, but also explains how does change in independent variable affect the dependent variable.
+B)I ran a linear model for "Economy (GDP per Capita)" as x variable and HappinessScore as y variable in "WHR" data set, then assign it to be the ModelGDP. In the end, I ran a summary() command for the linear model to see the results of statistical tests. A bivariate regression could be the most appropriate to use when we want to investigate how strong the influence of an independent variable to a dependent variable is.
+```{r,echo=TRUE}
+#C)
+ModelGDP<-lm(formula=HappinessScore~WHR$`Economy (GDP per Capita)`, data=WHR)
+summary(ModelGDP)#R^2= 0.6169
+
+```
+E)The statistical result suggests that 61.61% (Adjusted R-squared= 0.6161) of the variance in the data is due to this Bivariate Regression. Since the degree of freedom is 468, it suggests a large enough sample size to draw statistical analysis with. And the p-value for r square is less than 2.2e-16 which means we reject the null hypothesis by saying there is a significant positive linear relationship between the independent variable (GDP per capita) and the dependent variable (Happiness score).For every 1 unit increase in the Economy (GDP per Capita), the Happiness score goes up by 2.14892 unit.
+
+
+
+5)Multivariate regression
+A)I want to explore how does the combination of the two factors (GDP per Capita with life expectancy vs. Happiness score) influence on the happiness score, in this case, the multivariate regression would be the best choice, because it not only tells us the linear association between the variables but also explains how does change in independent variables affect the dependent variable.
+B)I ran a linear model for "Economy (GDP per Capita)" and "Health (Life Expectancy)" as x variable and HappinessScore as y variable in "WHR" data set, then assign it to be the ModelGDPLE. Next, I ran a summary() command for the linear model to see the results of statistical tests。 A multivariate regression could be the most appropriate to use when we want to investigate how strong the influence of the interaction of several independent variables to a dependent variable is.
+```{r,echo=TRUE}
+#C)
+ModelGDPLE<-lm(formula=HappinessScore~WHR$`Economy (GDP per Capita)`+ WHR$`Health (Life Expectancy)`, data=WHR)
+summary(ModelGDPLE)
+```
+E)The statistical result suggests that 65.94% (Adjusted R-squared= 0.6594) of the variance in the data is due to this Bivariate Regression.The degree of freedom equals to 467, which is large so we have enough sample size. And the p-value for r square is less than 2.2e-16, which suggests us to reject the null hypothesis by saying there is a significant linear relationship between the independent variable (GDP per capita and life expectancy) and the dependent variable (Happiness score). Because of the interaction of the two independent variables, for every 1 unit increase in the Economy (GDP per Capita) and Health (Life Expectancy), the Happiness score goes up by 1.41676 unit,and for every 1 unit increase in Health (Life Expectancy), the Happiness score goes up by 1.59923 unit.
+
+
+
+6)Confint
+A)In the given multivariate regression, I want to know the confidence interval of 95% for Economy (GDP per Capita) in ModelGDPLE. The command content() would be the appropriate to use in this case, because I am looking for the confidence intervals for parameters in a given model.
+B)I ran the confint() command and tell R to use the variable named WHR$`Economy (GDP per Capita)` in the model named ModelGDPLE to find the lower and upper confidence interval by given the confidence level equals to 0.95. The command confint() can be used when we want to see the lower and upper confidence for one or more parameters in a fitted model.
+```{r,echo=TRUE}
+#C)
+confint(ModelGDPLE,"WHR$`Economy (GDP per Capita)`",level= 0.95)
+
+```
+E)According to the statistical result, I can conclude that I am 95% sure about the true value for a change in 1 unit of GDP per capita that could result in units change for happiness scores is between 1.178842 to 1.654684.
+
+
+
+
+7)Predict
+A) Now I want to make a prediction interval for the happiness score with the income and family factors based on the ModelGDF for China in the year 2017. The command predict is the best way to found the result that I want.
+B)We will use the predict command, with 2 steps: First create a new data table with just one row containing China's factors.Then use predict() with interval = predict to find the possible range for happiness score of China.
+```{r,echo=TRUE}
+#C)
+
+WHRmod<-WHR %>%
+  dplyr::rename(GDPperCapita="Economy (GDP per Capita)")
+ModelGDF<-lm(formula=HappinessScore~GDPperCapita+Family, data=WHRmod)
+China<- data.frame( GDPperCapita = 1.081166, Family=1.160837)
+predict(ModelGDF, China, interval = "predict")
+
+
+```
+E)According to the code above, the R predict the happiness score for China is 5.79772 and the true happiness score for China should in between 4.4989 to 7.096541.
+
+
+
+
+8)Residual plot(s) 
+A)Now I want to see a residual plot for life expectancy factor in the three years of world happiness report. According to the residual plot, I can see if the residuals are uncorrelated or homoskedastic with the best fit line.
+B) First I created a residual column in WHR data set, then use the plot() command to plot the residual with the life expectancy value. the best fit line for modelGDPLE was indicated by 0,0 line in this residual graph. The residual plot gives an indication of whether the residuals are normal, homoskedastic, and uncorrelated. It is important if we want our p-values and confidence intervals to be accurate.
+```{r,echo=TRUE}
+#C)
+RP<- WHR%>%
+  mutate(resid=resid(ModelGDPLE))
+plot(RP$`Health (Life Expectancy)`, RP$resid,xlab = "Life Expectancy", ylab = "the Residuals of Life Expectancy")%>%
+  abline(0,0)%>%
+  title(main="Residualplots for Life Expectancy")
+
+```
+E)According to the graph, I can see that the residuals have high homoskedasticity related with the best fit line from the linear model, which also tell me about we have accurate p-values and confidence intervals.
+
+
+
+9)Shapiro-wilk test
+A)I want to know if the results from the ModelGDPLE has a normal distribution. By using the Shapiro-wilk test, it tells me whether I can reject the null hypothesis (normal distribution is true) or not.
+B)I ran the Shapiro-wilk test for residuals from the ModelGDPLE. We use Shapiro-wilk test when we want to know if the sample has a normal distribution.
+```{r,echo=TRUE}
+#C)
+shapiro.test(ModelGDPLE$residuals)
+
+```
+E)The result shows a p-value for residuals from the ModelGDPLE equals to 0.01506. We reject the null hypothesis by saying the samples of residuals do not come from a normal distribution.
+
+
+
+10)NCV test
+A)The NCV test is used when I want to check the heteroscedasticity for the ModelGDPLE. It tells me whether I can reject the null hypothesis that the variance of the residuals is constant or not.
+B)I ran the ncvTest() command for ModelGDPLE, to see if the heteroscedasticity is present or not by reject or confirm the null hypothesis. I use the ncvTest() command to check the heteroscedasticity for a given model.
+```{r,echo=TRUE}
+#C)
+ncvTest(ModelGDPLE)
+
+```
+E)According to the result, the p-value is 0.4720445 which is greater than 0.05, we fail to reject the null hypothesis by saying the variance of the residuals is constant.
+
+
+
+
+
+
